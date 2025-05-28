@@ -14,9 +14,11 @@ public class RoomService : MonoBehaviour
     private Camera cam;
     private Vector3 lastValidPosition;
     private static RoomService _instance;
+    private Vector3 roomCenter;
     #endregion
     #region Public Properties
     public static RoomService Instance => _instance;
+    public Vector3 RoomCenter => roomCenter;
     #endregion
     #region Public Methods
     public Vector3 GetValidPositionInsideRoom(FurnitureModel furniture, Vector3 position, Quaternion rotation)
@@ -217,9 +219,9 @@ public class RoomService : MonoBehaviour
                 corners.Add(new Vector2(world.x, world.z));
             }
         }
-        Vector2 centerPoint = corners.Aggregate(Vector2.zero, (sum, p) => sum + p) / corners.Count;
+        roomCenter = corners.Aggregate(Vector2.zero, (sum, p) => sum + p) / corners.Count;
 
-        return corners.OrderBy(p => Mathf.Atan2(p.y - centerPoint.y, p.x - centerPoint.x)).ToList();
+        return corners.OrderBy(p => Mathf.Atan2(p.y - roomCenter.y, p.x - roomCenter.x)).ToList();
     }
     #endregion
 }
