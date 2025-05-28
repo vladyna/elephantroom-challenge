@@ -21,20 +21,20 @@ public class RoomService : MonoBehaviour
     public Vector3 RoomCenter => roomCenter;
     #endregion
     #region Public Methods
-    public Vector3 GetValidPositionInsideRoom(FurnitureModel furniture, Vector3 position, Quaternion rotation)
+    public void TryGetValidPositionAndRotationInsideRoom(FurnitureModel furniture, Vector3 position, Quaternion rotation, out Vector3 validPosition, out Quaternion validRotation)
     {
-        Vector3 validPosition;
         if (IsFurnitureInsidePolygonXZ(furniture, position, rotation))
         {
             validPosition = position;
             lastValidPosition = position;
+            validRotation = rotation;
         }
         else
         {
             validPosition = GetClosestValidPosition(furniture, position, rotation, out Quaternion newrotation);
-            furniture.transform.rotation = newrotation;
+            validRotation = newrotation;
         }
-        return validPosition;
+
     }
     #endregion
     #region Unity's Methods

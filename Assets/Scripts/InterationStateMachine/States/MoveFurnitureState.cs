@@ -1,3 +1,4 @@
+using DG.Tweening;
 using UnityEngine;
 namespace Elephantroom.StateMachine
 {
@@ -34,8 +35,11 @@ namespace Elephantroom.StateMachine
             {
                 Vector3 hitPoint = ray.GetPoint(enter);
                 Vector3 offsetedPoint = hitPoint + positionOffset;
-                Vector3 validPosition = RoomService.Instance.GetValidPositionInsideRoom(selectedFurniture.GetComponent<FurnitureModel>(), offsetedPoint, selectedFurniture.transform.rotation);
+               
+                RoomService.Instance.TryGetValidPositionAndRotationInsideRoom(selectedFurniture.GetComponent<FurnitureModel>(), offsetedPoint, selectedFurniture.transform.rotation, out Vector3 validPosition, out Quaternion validRotation);
                 selectedFurniture.transform.position = validPosition;
+                Sequence sequence = DOTween.Sequence();
+                sequence.Append(selectedFurniture.transform.DORotate(validRotation.eulerAngles, 0.2f));
             }
 
             if (Input.GetMouseButtonDown(0))
