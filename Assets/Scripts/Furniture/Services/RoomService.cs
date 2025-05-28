@@ -117,8 +117,9 @@ public class RoomService
                 wallNormal2D = -wallNormal2D;
 
             Vector3 wallNormal3D = new Vector3(wallNormal2D.x, 0f, wallNormal2D.y);
-            Quaternion wallRotation = Quaternion.LookRotation(-wallNormal3D, Vector3.up);
-
+            Vector3 closestDirection = ClosestDirectionOfObject(furniture, -wallNormal3D);
+            Quaternion wallRotation = Quaternion.LookRotation(-wallNormal3D, Vector3.up) * Quaternion.AngleAxis(Vector3.Angle(furniture.transform.forward, closestDirection), Vector3.up);
+            
             if (IsObjectFullyInside(furniture, targetPos, wallRotation))
             {
                 bestRotation = wallRotation;
@@ -217,5 +218,35 @@ public class RoomService
         return polygonPoints;
     }
 
+    private Vector3 ClosestDirectionOfObject(FurnitureModel furniture, Vector3 desiredDirection)
+    {
+        Vector3 closesDirection = desiredDirection;
+        float smallestAngle = float.PositiveInfinity;
+        var angle = Vector3.Angle(furniture.transform.forward, desiredDirection);
+        if (angle < smallestAngle)
+        {
+            smallestAngle = angle;
+            closesDirection = furniture.transform.forward;
+        }
+        angle = Vector3.Angle(furniture.transform.right, desiredDirection);
+        if (angle < smallestAngle)
+        {
+            smallestAngle = angle;
+            closesDirection = furniture.transform.right;
+        }
+        angle = Vector3.Angle(furniture.transform.forward * -1, desiredDirection);
+        if (angle < smallestAngle)
+        {
+            smallestAngle = angle;
+            closesDirection = furniture.transform.forward * -1;
+        }
+        angle = Vector3.Angle(furniture.transform.right * -1, desiredDirection);
+        if (angle < smallestAngle)
+        {
+            smallestAngle = angle;
+            closesDirection = furniture.transform.right * - 1;
+        }
+        return closesDirection;
+    }
     #endregion
 }
