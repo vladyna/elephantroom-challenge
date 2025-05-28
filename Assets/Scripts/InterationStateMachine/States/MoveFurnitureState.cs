@@ -33,7 +33,9 @@ namespace Elephantroom.StateMachine
             if (groundPlane.Raycast(ray, out float enter))
             {
                 Vector3 hitPoint = ray.GetPoint(enter);
-                selectedFurniture.transform.position = hitPoint + positionOffset;
+                Vector3 offsetedPoint = hitPoint + positionOffset;
+                Vector3 validPosition = RoomService.Instance.GetValidPositionInsideRoom(selectedFurniture.GetComponent<FurnitureModel>(), offsetedPoint, selectedFurniture.transform.rotation);
+                selectedFurniture.transform.position = validPosition;
             }
 
             if (Input.GetMouseButtonDown(0))
