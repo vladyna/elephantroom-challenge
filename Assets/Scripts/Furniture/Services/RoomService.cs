@@ -29,13 +29,14 @@ public class RoomService : MonoBehaviour
         }
         else
         {
-            validPosition = lastValidPosition;
+            validPosition = GetClosestValidPosition(furniture, position, rotation, out Quaternion newrotation);
+            furniture.transform.rotation = newrotation;
         }
         return validPosition;
     }
     #endregion
     #region Unity's Methods
-    void Start()
+    private void Start()
     {
         if (Instance != null)
         {
@@ -51,7 +52,7 @@ public class RoomService : MonoBehaviour
     #endregion
 
     #region Private Methods
-    bool IsFurnitureInsidePolygonXZ(FurnitureModel furniture, Vector3 pos, Quaternion rot)
+    private bool IsFurnitureInsidePolygonXZ(FurnitureModel furniture, Vector3 pos, Quaternion rot)
     {
         Vector2[] corners = furniture.GetBottomCornersXZ(pos, rot);
         foreach (var corner in corners)
@@ -62,7 +63,7 @@ public class RoomService : MonoBehaviour
         return true;
     }
 
-    bool PointInPolygon(Vector2 point, List<Vector2> polygon)
+    private bool PointInPolygon(Vector2 point, List<Vector2> polygon)
     {
         bool inside = false;
         int count = polygon.Count;
@@ -80,62 +81,118 @@ public class RoomService : MonoBehaviour
         return inside;
     }
 
-    private Vector3 GetClosestValidPosition(FurnitureModel furniture, Vector3 targetPos, Quaternion rotation)
+
+    private Vector3 GetClosestValidPosition(FurnitureModel furniture, Vector3 targetPos, Quaternion currentRotation, out Quaternion bestRotation)
     {
+        Vector2[] corners = furniture.GetBottomCornersXZ(targetPos, currentRotation);
+        Vector2 roomCenter = roomPolygon.Aggregate(Vector2.zero, (sum, p) => sum + p) / roomPolygon.Count;
+
+        if (corners.All(c => PointInPolygon(c, roomPolygon)))
+        {
+            bestRotation = currentRotation;
+            lastValidPosition = targetPos;
+            return targetPos;
+        }
+
+        Vector2 closestCorner = Vector2.zero;
+        Vector2 closestPointOnEdge = Vector2.zero;
+        Vector2 closestEdgeDir = Vector2.zero;
+        float closestDist = float.MaxValue;
+
+        foreach (var corner in corners)
+        {
+            if (PointInPolygon(corner, roomPolygon)) continue;
+
+            for (int i = 0; i < roomPolygon.Count; i++)
+            {
+                Vector2 p1 = roomPolygon[i];
+                Vector2 p2 = roomPolygon[(i + 1) % roomPolygon.Count];
+
+                Vector2 pointOnEdge = ClosestPointOnLineSegment(corner, p1, p2);
+                float dist = Vector2.Distance(corner, pointOnEdge);
+
+                if (dist < closestDist)
+                {
+                    closestDist = dist;
+                    closestCorner = corner;
+                    closestPointOnEdge = pointOnEdge;
+                    closestEdgeDir = (p2 - p1).normalized;
+                }
+            }
+        }
+
+        if (closestDist < float.MaxValue)
+        {
+            Vector2 wallNormal2D = new Vector2(-closestEdgeDir.y, closestEdgeDir.x);
+            Vector2 toCenter = (roomCenter - closestPointOnEdge).normalized;
+
+            if (Vector2.Dot(toCenter, wallNormal2D) < 0)
+                wallNormal2D = -wallNormal2D;
+
+            Vector3 wallNormal3D = new Vector3(wallNormal2D.x, 0f, wallNormal2D.y);
+            Quaternion wallRotation = Quaternion.LookRotation(-wallNormal3D, Vector3.up);
+
+            if (IsObjectFullyInside(furniture, targetPos, wallRotation))
+            {
+                bestRotation = wallRotation;
+                lastValidPosition = targetPos;
+                return targetPos;
+            }
+        }
         const int maxIterations = 20;
         const float pushStep = 0.05f;
-
         Vector3 currentPos = targetPos;
 
         for (int i = 0; i < maxIterations; i++)
         {
-            Vector2[] corners = furniture.GetBottomCornersXZ(currentPos, rotation);
-
-            bool allInside = true;
-            Vector2 correction = Vector2.zero;
-
-            foreach (var corner in corners)
+            if (IsObjectFullyInside(furniture, currentPos, currentRotation))
             {
-                if (!PointInPolygon(corner, roomPolygon))
-                {
-                    allInside = false;
-
-                    Vector2 roomCenter = roomPolygon.Aggregate(Vector2.zero, (sum, p) => sum + p) / roomPolygon.Count;
-                    Vector2 pushDir = (roomCenter - corner).normalized;
-                    correction += pushDir;
-                }
+                bestRotation = currentRotation;
+                lastValidPosition = currentPos;
+                return currentPos;
             }
 
-            if (allInside)
-                return currentPos;
+            Vector2[] testCorners = furniture.GetBottomCornersXZ(currentPos, currentRotation);
+            Vector2 pushDir = Vector2.zero;
 
-            if (correction != Vector2.zero)
+            foreach (var corner in testCorners)
             {
-                Vector2 offset = correction.normalized * pushStep;
+                if (!PointInPolygon(corner, roomPolygon))
+                    pushDir += (roomCenter - corner).normalized;
+            }
+
+            if (pushDir != Vector2.zero)
+            {
+                Vector2 offset = pushDir.normalized * pushStep;
                 currentPos += new Vector3(offset.x, 0f, offset.y);
             }
             else
             {
-                currentPos = lastValidPosition;
-                break; // No valid correction — escape loop
+                break;
             }
         }
 
-        return currentPos;
+        bestRotation = currentRotation;
+        return lastValidPosition;
     }
-
-    Vector2 ClosestPointOnLineSegment(Vector2 point, Vector2 lineStart, Vector2 lineEnd)
+    private Vector2 ClosestPointOnLineSegment(Vector2 point, Vector2 a, Vector2 b)
     {
-        Vector2 lineDir = lineEnd - lineStart;
-        float lineLength = lineDir.magnitude;
-        lineDir.Normalize();
-
-        float projection = Vector2.Dot(point - lineStart, lineDir);
-        projection = Mathf.Clamp(projection, 0, lineLength);
-
-        return lineStart + lineDir * projection;
+        Vector2 ab = b - a;
+        float t = Vector2.Dot(point - a, ab) / ab.sqrMagnitude;
+        t = Mathf.Clamp01(t);
+        return a + t * ab;
     }
-    List<Vector2> BuildRoomPolygonFromWalls(List<Transform> walls)
+    private bool IsObjectFullyInside(FurnitureModel furniture, Vector3 pos, Quaternion rot)
+    {
+        Vector2[] corners = furniture.GetBottomCornersXZ(pos, rot);
+        foreach (var corner in corners)
+        {
+            if (!PointInPolygon(corner, roomPolygon))
+                return false;
+        }
+        return true;
+    }
+    private List<Vector2> BuildRoomPolygonFromWalls(List<Transform> walls)
     {
         List<Vector2> corners = new List<Vector2>();
 
