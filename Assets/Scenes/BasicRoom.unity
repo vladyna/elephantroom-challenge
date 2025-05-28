@@ -439,7 +439,7 @@ Transform:
   m_GameObject: {fileID: 509586872}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -8.2501545, y: -7.170404, z: -5.00706}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -697,6 +697,7 @@ MonoBehaviour:
   _scriptableObjectInstallers: []
   _monoInstallers:
   - {fileID: 648352734}
+  - {fileID: 488451761}
   _installerPrefabs: []
   _autoRun: 1
   OnPreInstall:
@@ -882,7 +883,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: def60550a3359e146bb2b4e61d1e62ae, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  furniturePrefab: {fileID: 0}
   furnitureLayer:
     serializedVersion: 2
     m_Bits: 64
@@ -917,6 +917,9 @@ MonoBehaviour:
   - https://storage.googleapis.com/furniture-models/armchair/poltrona-biza_a3bc4a40-53e9-4be0-89f1-a7573d600971.glb
   - https://storage.googleapis.com/furniture-models/dining-chair/victoria-ghost_8d4ea5cc-78a8-4edc-961d-17a3f6e83d4f.glb
   placeHolder: {fileID: 509586873}
+  furnitureLayer:
+    serializedVersion: 2
+    m_Bits: 64
 --- !u!1 &1773200215
 GameObject:
   m_ObjectHideFlags: 0
