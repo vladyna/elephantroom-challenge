@@ -2,6 +2,7 @@ using GLTFast;
 using UnityEngine;
 using System.Collections;
 using System.Threading.Tasks;
+using Unity.VisualScripting;
 
 public class FurnitureLoader : MonoBehaviour
 {
@@ -57,6 +58,9 @@ public class FurnitureLoader : MonoBehaviour
         if (success)
         {
             gltfAsset.transform.SetParent(placeHolder);
+            gltfAsset.AddComponent<FurnitureModel>();
+            gltfAsset.AddComponent<BoxCollider>();
+            gltfAsset.gameObject.layer = 6;
             gltfAsset.transform.position = RoomService.Instance.transform.position;
         }
         else
