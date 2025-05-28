@@ -14,6 +14,7 @@ public class FurnitureLoader : MonoBehaviour
         "https://storage.googleapis.com/furniture-models/dining-chair/victoria-ghost_8d4ea5cc-78a8-4edc-961d-17a3f6e83d4f.glb"
     };
     [SerializeField] private Transform placeHolder;
+    [SerializeField] private LayerMask furnitureLayer;
     #endregion
     #region Private Variables
     private RoomService roomService;
@@ -74,7 +75,7 @@ public class FurnitureLoader : MonoBehaviour
             gltfAsset.transform.SetParent(placeHolder);
             var furnitureModel = gltfAsset.AddComponent<FurnitureModel>();
             gltfAsset.AddComponent<BoxCollider>();
-            gltfAsset.gameObject.layer = 6;
+            gltfAsset.gameObject.layer = GetLayerFromMask(furnitureLayer);
 
             var position = roomService.RoomCenter;
             var meshRenderer = gltfAsset.GetComponentInChildren<MeshRenderer>();
@@ -89,7 +90,16 @@ public class FurnitureLoader : MonoBehaviour
             Debug.LogError("Failed to load the GLTF model from URL");
         }
     }
-
+    private int GetLayerFromMask(LayerMask mask)
+    {
+        int value = mask.value;
+        for (int i = 0; i < 32; i++)
+        {
+            if ((value & (1 << i)) != 0)
+                return i;
+        }
+        return -1; 
+    }
     #endregion
 
 }
