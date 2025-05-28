@@ -1,11 +1,21 @@
 using UnityEngine;
 using UnityEngine.UIElements;
+using Zenject;
 
 [RequireComponent(typeof(BoxCollider))]
 public class FurnitureModel : MonoBehaviour, ISelectable
 {
     #region Private Variables
     private BoxCollider boxCollider;
+    private OutlineService outlineService;
+    #endregion
+
+    #region Injection
+    [Inject]
+    private void Injection(OutlineService outlineService)
+    {
+        this.outlineService = outlineService;
+    }
     #endregion
 
     #region Unity's Methods
@@ -49,12 +59,12 @@ public class FurnitureModel : MonoBehaviour, ISelectable
     #region ISelectable Implementation
     public void Select()
     {
-        OutlineService.Instance.AddOutline(gameObject);
+        outlineService.AddOutline(gameObject);
     }
 
     public void Deselect()
     {
-        OutlineService.Instance.RemoveOutline(gameObject);
+        outlineService.RemoveOutline(gameObject);
     }
     #endregion
 }

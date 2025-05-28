@@ -3,6 +3,7 @@ using UnityEngine;
 using System.Collections;
 using System.Threading.Tasks;
 using Unity.VisualScripting;
+using Zenject;
 
 public class FurnitureLoader : MonoBehaviour
 {
@@ -13,6 +14,19 @@ public class FurnitureLoader : MonoBehaviour
         "https://storage.googleapis.com/furniture-models/dining-chair/victoria-ghost_8d4ea5cc-78a8-4edc-961d-17a3f6e83d4f.glb"
     };
     [SerializeField] private Transform placeHolder;
+    #endregion
+    #region Private Variables
+    private RoomService roomService;
+    private DiContainer container;
+    #endregion
+
+    #region Injection 
+    [Inject]
+    public void Injection(RoomService roomService, DiContainer container)
+    {
+        this.roomService = roomService;
+        this.container = container;
+    }
     #endregion
     #region Unity's Methods
     private void Start()
@@ -58,16 +72,24 @@ public class FurnitureLoader : MonoBehaviour
         if (success)
         {
             gltfAsset.transform.SetParent(placeHolder);
-            gltfAsset.AddComponent<FurnitureModel>();
+            var furnitureModel = gltfAsset.AddComponent<FurnitureModel>();
             gltfAsset.AddComponent<BoxCollider>();
             gltfAsset.gameObject.layer = 6;
-            gltfAsset.transform.position = RoomService.Instance.transform.position;
+
+            var position = roomService.RoomCenter;
+            var meshRenderer = gltfAsset.GetComponentInChildren<MeshRenderer>();
+            Debug.Log(meshRenderer.bounds);
+            position.y = meshRenderer.bounds.extents.y - meshRenderer.bounds.center.y;
+
+            gltfAsset.transform.position = position;
+            container.Inject(furnitureModel);
         }
         else
         {
             Debug.LogError("Failed to load the GLTF model from URL");
         }
     }
+
     #endregion
 
 }

@@ -1,4 +1,6 @@
 using UnityEngine;
+using Zenject;
+
 namespace Elephantroom.StateMachine
 {
     public class SelectFurnitureState : IFurnitureState
@@ -6,11 +8,14 @@ namespace Elephantroom.StateMachine
         #region Private Variables
         private FurnitureStateMachine context;
         private LayerMask furnitureLayer = 64;
+        private MoveFurnitureStateFactory moveFurnitureStateFactory;
         #endregion
         #region Constructor
-        public SelectFurnitureState(FurnitureStateMachine ctx)
+        [Inject]
+        public SelectFurnitureState(FurnitureStateMachine ctx, MoveFurnitureStateFactory moveFurnitureStateFactory)
         {
             context = ctx;
+            this.moveFurnitureStateFactory = moveFurnitureStateFactory;
         }
         #endregion
         #region IFurnitureState Implementations
@@ -31,7 +36,7 @@ namespace Elephantroom.StateMachine
                     if (selectable != null)
                     {
                         selectable.Select();
-                        context.SetState(new MoveFurnitureState(context, selected));
+                        context.SetState(moveFurnitureStateFactory.Create(context, selected));
                     }
                 }
             }

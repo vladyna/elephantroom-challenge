@@ -1,20 +1,28 @@
 using DG.Tweening;
+using UnityEditor.Search;
 using UnityEngine;
+using Zenject;
+
 namespace Elephantroom.StateMachine
 {
     public class MoveFurnitureState : IFurnitureState
     {
         #region Private Variables
+        private RoomService roomService;
+        private SelectFurnitureStateFactory selectFurnitureStateFactory;
         private GameObject selectedFurniture;
         private Plane groundPlane = new Plane(Vector3.up, Vector3.zero);
         private FurnitureStateMachine context;
         private Vector3 positionOffset;
         #endregion
         #region Constructor
-        public MoveFurnitureState(FurnitureStateMachine ctx, GameObject furniture)
+        [Inject]
+        public MoveFurnitureState(RoomService roomService, FurnitureStateMachine ctx, GameObject furniture, SelectFurnitureStateFactory selectFurnitureStateFactory)
         {
             context = ctx;
             selectedFurniture = furniture;
+            this.roomService = roomService;
+            this.selectFurnitureStateFactory = selectFurnitureStateFactory;
         }
         #endregion
         #region IFurnitureState Implementation
@@ -35,8 +43,8 @@ namespace Elephantroom.StateMachine
             {
                 Vector3 hitPoint = ray.GetPoint(enter);
                 Vector3 offsetedPoint = hitPoint + positionOffset;
-               
-                RoomService.Instance.TryGetValidPositionAndRotationInsideRoom(selectedFurniture.GetComponent<FurnitureModel>(), offsetedPoint, selectedFurniture.transform.rotation, out Vector3 validPosition, out Quaternion validRotation);
+
+                roomService.TryGetValidPositionAndRotationInsideRoom(selectedFurniture.GetComponent<FurnitureModel>(), offsetedPoint, selectedFurniture.transform.rotation, out Vector3 validPosition, out Quaternion validRotation);
                 selectedFurniture.transform.position = validPosition;
                 Sequence sequence = DOTween.Sequence();
                 sequence.Append(selectedFurniture.transform.DORotate(validRotation.eulerAngles, 0.2f));
@@ -45,7 +53,7 @@ namespace Elephantroom.StateMachine
             if (Input.GetMouseButtonDown(0))
             {
  
-                context.SetState(new SelectFurnitureState(context));
+                context.SetState(selectFurnitureStateFactory.Create(context));
             }
         }
 

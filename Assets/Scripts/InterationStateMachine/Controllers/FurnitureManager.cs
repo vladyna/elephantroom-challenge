@@ -1,41 +1,33 @@
 using UnityEngine;
+using Zenject;
+
 namespace Elephantroom.StateMachine
 {
     public class FurnitureManager : MonoBehaviour
     {
         #region Serialized Variables
-        [SerializeField] private GameObject furniturePrefab;
         [SerializeField] private LayerMask furnitureLayer;
         #endregion
 
         #region Private Variables
         private FurnitureStateMachine stateMachine;
+        private MoveFurnitureStateFactory moveFurnitureStateFactory;
+        private SelectFurnitureStateFactory selectFurnitureStateFactory;
         #endregion
+        #region Injection
+        [Inject]
+        private void Injection(MoveFurnitureStateFactory moveFurnitureStateFactory, SelectFurnitureStateFactory selectFurnitureStateFactory)
+        {
+            this.moveFurnitureStateFactory = moveFurnitureStateFactory;
+            this.selectFurnitureStateFactory = selectFurnitureStateFactory;
+        }
+        #endregion
+
         #region Unity's Methods
         private void Start()
         {
             stateMachine = GetComponent<FurnitureStateMachine>();
-            stateMachine.SetState(new SelectFurnitureState(stateMachine));
-        }
-
-        private void Update()
-        {
-            if (Input.GetKeyDown(KeyCode.P))
-                stateMachine.SetState(new PlaceFurnitureState(stateMachine, furniturePrefab));
-
-            if (Input.GetKeyDown(KeyCode.M))
-            {
-                GameObject selected = GameObject.FindWithTag("Furniture");
-                if (selected)
-                    stateMachine.SetState(new MoveFurnitureState(stateMachine, selected));
-            }
-
-            if (Input.GetKeyDown(KeyCode.R))
-            {
-                GameObject selected = GameObject.FindWithTag("Furniture");
-                if (selected)
-                    stateMachine.SetState(new RotateFurnitureState(stateMachine, selected));
-            }
+            stateMachine.SetState(selectFurnitureStateFactory.Create(stateMachine));
         }
         #endregion
     }

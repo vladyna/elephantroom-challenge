@@ -1,28 +1,16 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class OutlineService : MonoBehaviour
+public class OutlineService
 {
-    #region Serialized Fields
-    [SerializeField] private Outline prefabOutline;
+    #region Private Fields
+    private Outline prefabOutline;
     #endregion
 
-    #region Private Variables
-
-    private static OutlineService _instance;
-    #endregion
-    #region Public Properties
-    public static OutlineService Instance => _instance;
-    #endregion
-    #region Unity's Methods
-    private void Start()
+    #region Constructor
+    public OutlineService(Outline prefabOutline)
     {
-        if (Instance != null)
-        {
-            Destroy(this);
-            return;
-        }
-        _instance = this;
+        this.prefabOutline = prefabOutline;
     }
     #endregion
 
@@ -38,7 +26,7 @@ public class OutlineService : MonoBehaviour
         var outline = gameobject.GetComponent<Outline>();
         if (outline != null)
         {
-            Destroy (outline);
+            Object.Destroy(outline);
         }
     }
     #endregion

@@ -28,7 +28,6 @@ namespace Elephantroom.StateMachine
             if (Input.GetMouseButtonDown(0))
             {
 
-                context.SetState(new SelectFurnitureState(context));
             }
         }
 

@@ -1,24 +1,25 @@
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-using static UnityEngine.GraphicsBuffer;
 
-// NOTE(): Do a zenject instead of Singleton
-public class RoomService : MonoBehaviour
+public class RoomService 
 {
-    #region Serilized Variables
-    [SerializeField] private List<Transform> wallPoints;
-    #endregion
     #region Private Variables
     private List<Vector2> roomPolygon;
-    private Camera cam;
     private Vector3 lastValidPosition;
     private static RoomService _instance;
     private Vector3 roomCenter;
     #endregion
     #region Public Properties
-    public static RoomService Instance => _instance;
     public Vector3 RoomCenter => roomCenter;
+    #endregion
+
+    #region Constructors
+    public RoomService(List<Transform> wallPoints)
+    {
+        lastValidPosition = Vector3.zero;
+        roomPolygon = BuildRoomPolygonFromWalls(wallPoints);
+    }
     #endregion
     #region Public Methods
     public void TryGetValidPositionAndRotationInsideRoom(FurnitureModel furniture, Vector3 position, Quaternion rotation, out Vector3 validPosition, out Quaternion validRotation)
@@ -37,22 +38,6 @@ public class RoomService : MonoBehaviour
 
     }
     #endregion
-    #region Unity's Methods
-    private void Start()
-    {
-        if (Instance != null)
-        {
-            Destroy(this);
-            return;
-        }
-        _instance = this;
-        cam = Camera.main;
-        lastValidPosition = transform.position;
-
-        roomPolygon = BuildRoomPolygonFromWalls(wallPoints);
-    }
-    #endregion
-
     #region Private Methods
     private bool IsFurnitureInsidePolygonXZ(FurnitureModel furniture, Vector3 pos, Quaternion rot)
     {
@@ -196,32 +181,41 @@ public class RoomService : MonoBehaviour
     }
     private List<Vector2> BuildRoomPolygonFromWalls(List<Transform> walls)
     {
-        List<Vector2> corners = new List<Vector2>();
+        List<Vector2> polygonPoints = new List<Vector2>();
 
         foreach (var wall in walls)
         {
             var collider = wall.GetComponent<BoxCollider>();
             if (collider == null) continue;
+
             Transform tr = collider.transform;
-            Vector3 center = tr.TransformPoint(collider.center);
-            Vector3 halfSize = Vector3.Scale(collider.size * 0.5f, tr.lossyScale);
-            Vector3[] localCorners = new Vector3[]
-            {
-                new Vector3(-halfSize.x, 0, -halfSize.z),
-                new Vector3(halfSize.x, 0, -halfSize.z),
-                new Vector3(halfSize.x, 0, halfSize.z),
-                new Vector3(-halfSize.x, 0, halfSize.z),
-            };
 
-            foreach (var local in localCorners)
-            {
-                Vector3 world = center + tr.rotation * local;
-                corners.Add(new Vector2(world.x, world.z));
-            }
+            Vector3 size = Vector3.Scale(collider.size, tr.lossyScale);
+            Vector3 halfSize = size * 0.5f;
+
+            Vector3 worldCenter = tr.TransformPoint(collider.center);
+
+            Vector3 right = tr.right;
+            Vector3 forward = tr.forward;
+
+            Vector3 innerOffset = -forward * halfSize.z;
+
+            Vector3 corner1 = worldCenter + innerOffset + right * halfSize.x;
+            Vector3 corner2 = worldCenter + innerOffset - right * halfSize.x;
+
+            polygonPoints.Add(new Vector2(corner1.x, corner1.z));
+            polygonPoints.Add(new Vector2(corner2.x, corner2.z));
         }
-        roomCenter = corners.Aggregate(Vector2.zero, (sum, p) => sum + p) / corners.Count;
 
-        return corners.OrderBy(p => Mathf.Atan2(p.y - roomCenter.y, p.x - roomCenter.x)).ToList();
+        Vector2 center = polygonPoints.Aggregate(Vector2.zero, (sum, p) => sum + p) / polygonPoints.Count;
+
+        polygonPoints = polygonPoints
+            .OrderBy(p => Mathf.Atan2(p.y - center.y, p.x - center.x))
+            .ToList();
+
+        roomCenter = center;
+        return polygonPoints;
     }
+
     #endregion
 }
